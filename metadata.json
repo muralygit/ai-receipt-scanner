@@ -1,0 +1,10 @@
+{
+  "name": "AI Receipt Scanner",
+  "description": "Android app in Kotlin for scanning receipts with CameraX, ML Kit OCR, Gemini AI JSON parsing, Room DB, and PDF/CSV export.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
