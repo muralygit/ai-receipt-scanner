@@ -37,6 +37,14 @@
                 android:src="@android:drawable/ic_menu_save" />
 
             <ImageButton
+                android:id="@+id/btnBackupMenu"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/action_backup_restore"
+                android:src="@android:drawable/ic_menu_upload" />
+
+            <ImageButton
                 android:id="@+id/btnSettings"
                 android:layout_width="48dp"
                 android:layout_height="48dp"

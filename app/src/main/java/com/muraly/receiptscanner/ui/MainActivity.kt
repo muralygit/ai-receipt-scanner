@@ -1,18 +1,27 @@
 package com.muraly.receiptscanner.ui
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.widget.PopupMenu
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.FileProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.muraly.receiptscanner.ReceiptScannerApplication
 import com.muraly.receiptscanner.databinding.ActivityMainBinding
 import com.muraly.receiptscanner.ui.viewmodel.MainViewModel
 import com.muraly.receiptscanner.ui.viewmodel.ViewModelFactory
+import com.muraly.receiptscanner.util.BackupException
+import com.muraly.receiptscanner.util.BackupHelper
+import com.muraly.receiptscanner.util.ExportHelper
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
@@ -24,6 +33,12 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var adapter: ReceiptAdapter
     private val inrFormat = java.text.NumberFormat.getCurrencyInstance(java.util.Locale("en", "IN"))
+
+    private val pickBackupFile = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { restoreFromBackup(it) }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -88,6 +103,78 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.btnExportCsv.setOnClickListener { exportAllToCsv() }
+
+        binding.btnBackupMenu.setOnClickListener { showBackupRestoreMenu() }
+    }
+
+    private fun showBackupRestoreMenu() {
+        val popup = PopupMenu(this, binding.btnBackupMenu)
+        popup.menu.add(0, 1, 0, "Backup all receipts")
+        popup.menu.add(0, 2, 1, "Restore from backup")
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                1 -> { backupAllReceipts(); true }
+                2 -> { pickBackupFile.launch("application/json"); true }
+                else -> false
+            }
+        }
+        popup.show()
+    }
+
+    private fun backupAllReceipts() {
+        val receipts = adapter.currentList
+        if (receipts.isEmpty()) {
+            Toast.makeText(this, "No receipts to back up yet", Toast.LENGTH_SHORT).show()
+            return
+        }
+        try {
+            val file = BackupHelper.exportBackup(this, receipts)
+            val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "application/json"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            startActivity(Intent.createChooser(intent, "Save backup to"))
+        } catch (e: Exception) {
+            Toast.makeText(this, "Backup failed: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun restoreFromBackup(uri: Uri) {
+        lifecycleScope.launch {
+            try {
+                val backup = BackupHelper.readBackup(this@MainActivity, uri)
+                AlertDialog.Builder(this@MainActivity)
+                    .setTitle("Restore backup?")
+                    .setMessage(
+                        "This backup contains ${backup.receiptCount} receipt(s) from " +
+                            "${backup.exportedAt}. They'll be added to your existing receipts " +
+                            "(nothing currently saved will be deleted). Continue?"
+                    )
+                    .setPositiveButton("Restore") { _, _ ->
+                        lifecycleScope.launch {
+                            var imported = 0
+                            for (backupReceipt in backup.receipts) {
+                                val (receipt, items) = BackupHelper.toEntities(backupReceipt)
+                                app.repository.insertReceiptWithItems(receipt, items)
+                                imported++
+                            }
+                            Toast.makeText(
+                                this@MainActivity,
+                                "Restored $imported receipt(s)",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+                    .setNegativeButton("Cancel", null)
+                    .show()
+            } catch (e: BackupException) {
+                Toast.makeText(this@MainActivity, e.message, Toast.LENGTH_LONG).show()
+            } catch (e: Exception) {
+                Toast.makeText(this@MainActivity, "Restore failed: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     private fun exportAllToCsv() {
@@ -97,8 +184,8 @@ class MainActivity : AppCompatActivity() {
             return
         }
         try {
-            val file = com.muraly.receiptscanner.util.ExportHelper.exportToCsv(this, receipts)
-            val uri = androidx.core.content.FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
+            val file = ExportHelper.exportToCsv(this, receipts)
+            val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
             val intent = Intent(Intent.ACTION_SEND).apply {
                 type = "text/csv"
                 putExtra(Intent.EXTRA_STREAM, uri)

@@ -18,6 +18,7 @@
     <string name="action_delete">Delete</string>
     <string name="action_export_pdf">Export PDF</string>
     <string name="action_export_csv">Export All (CSV)</string>
+    <string name="action_backup_restore">Backup or restore</string>
     <string name="action_share">Share</string>
 
     <string name="section_items">Items</string>
@@ -37,5 +38,7 @@
 
     <string name="status_reading_text">Reading receipt text…</string>
     <string name="status_ai_extracting">Extracting details with AI…</string>
+
     <string name="developer_credit">Developed by Muraly • 7012451340</string>
+
 </resources>
