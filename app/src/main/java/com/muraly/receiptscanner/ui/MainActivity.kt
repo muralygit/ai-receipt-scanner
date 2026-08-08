@@ -150,14 +150,14 @@ class MainActivity : AppCompatActivity() {
                 AlertDialog.Builder(this@MainActivity)
                     .setTitle("Restore backup?")
                     .setMessage(
-                        "This backup contains ${backup.receiptCount} receipt(s) from " +
-                            "${backup.exportedAt}. They'll be added to your existing receipts " +
+                        "This backup contains ${BackupHelper.receiptCountOf(backup)} receipt(s) from " +
+                            "${backup.exportedAt ?: "an earlier date"}. They'll be added to your existing receipts " +
                             "(nothing currently saved will be deleted). Continue?"
                     )
                     .setPositiveButton("Restore") { _, _ ->
                         lifecycleScope.launch {
                             var imported = 0
-                            for (backupReceipt in backup.receipts) {
+                            for (backupReceipt in backup.receipts.orEmpty()) {
                                 val (receipt, items) = BackupHelper.toEntities(backupReceipt)
                                 app.repository.insertReceiptWithItems(receipt, items)
                                 imported++
