@@ -17,46 +17,65 @@ import java.util.Locale
 object ExportHelper {
     private val inrFormat = NumberFormat.getCurrencyInstance(Locale("en", "IN"))
 
+    private const val PAGE_WIDTH = 595
+    private const val PAGE_HEIGHT = 842
+    private const val LEFT = 40f
+    private const val RIGHT = 555f
+    private const val TOP_MARGIN = 50f
+    private const val BOTTOM_MARGIN = 70f // reserved space so an item row never gets cut mid-line
+    private const val ROW_HEIGHT = 18f
+
+    private val titlePaint = Paint().apply { textSize = 18f; isFakeBoldText = true }
+    private val labelPaint = Paint().apply { textSize = 12f }
+    private val boldPaint = Paint().apply { textSize = 13f; isFakeBoldText = true }
+    private val footerPaint = Paint().apply { textSize = 10f; color = 0xFF888888.toInt() }
+
+    /**
+     * Exports a single receipt to PDF, spanning as many pages as needed to fit every
+     * item line. The shop header repeats at the top of each page and a "Page X of Y"
+     * footer is stamped once the total page count is known.
+     */
     fun exportToPdf(context: Context, receipt: ReceiptWithItems): File {
         val pdf = PdfDocument()
-        val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create()
-        val page = pdf.startPage(pageInfo)
-        val canvas = page.canvas
-
-        val titlePaint = Paint().apply { textSize = 18f; isFakeBoldText = true }
-        val labelPaint = Paint().apply { textSize = 12f }
-        val boldPaint = Paint().apply { textSize = 13f; isFakeBoldText = true }
-
-        var y = 50f
-        val left = 40f
         val r = receipt.receipt
+        val pages = mutableListOf<PdfDocument.Page>()
 
-        canvas.drawText(r.shopName.ifBlank { "Receipt" }, left, y, titlePaint)
-        y += 22f
-        canvas.drawText("Invoice: ${r.invoiceNumber.ifBlank { "-" }}", left, y, labelPaint)
-        y += 16f
-        canvas.drawText("Date: ${r.date}  ${r.time}", left, y, labelPaint)
-        y += 16f
-        canvas.drawText("Payment: ${r.paymentMethod.ifBlank { "-" }}", left, y, labelPaint)
-        y += 26f
+        var pageNumber = 1
+        var page = pdf.startPage(PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageNumber).create())
+        var canvas = page.canvas
+        var y = drawReceiptHeader(canvas, r, isFirstPage = true)
+        y = drawItemsTableHeader(canvas, y)
 
-        canvas.drawText("Item", left, y, boldPaint)
-        canvas.drawText("Qty", 360f, y, boldPaint)
-        canvas.drawText("Amount", 470f, y, boldPaint)
-        y += 8f
-        canvas.drawLine(left, y, 555f, y, labelPaint)
-        y += 18f
+        val itemIterator = receipt.items.iterator()
+        while (itemIterator.hasNext()) {
+            val item = itemIterator.next()
 
-        receipt.items.forEach { item ->
-            if (y > 780f) return@forEach // simple single-page guard
-            canvas.drawText(item.name.take(40), left, y, labelPaint)
+            // Not enough room for another row (plus totals block if this is the last item) -> new page.
+            val needsTotalsSpace = !itemIterator.hasNext()
+            val requiredSpace = ROW_HEIGHT + (if (needsTotalsSpace) 90f else 0f)
+            if (y + requiredSpace > PAGE_HEIGHT - BOTTOM_MARGIN) {
+                pdf.finishPage(page)
+                pages.add(page)
+                pageNumber++
+                page = pdf.startPage(PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageNumber).create())
+                canvas = page.canvas
+                y = drawReceiptHeader(canvas, r, isFirstPage = false)
+                y = drawItemsTableHeader(canvas, y)
+            }
+
+            canvas.drawText(item.name.take(40), LEFT, y, labelPaint)
             canvas.drawText("x${item.quantity}", 360f, y, labelPaint)
             canvas.drawText(inrFormat.format(item.totalPrice), 470f, y, labelPaint)
-            y += 18f
+            y += ROW_HEIGHT
+        }
+
+        if (receipt.items.isEmpty()) {
+            canvas.drawText("(no items recorded)", LEFT, y, labelPaint)
+            y += ROW_HEIGHT
         }
 
         y += 10f
-        canvas.drawLine(left, y, 555f, y, labelPaint)
+        canvas.drawLine(LEFT, y, RIGHT, y, labelPaint)
         y += 20f
         canvas.drawText("Subtotal: ${inrFormat.format(r.subtotal)}", 380f, y, labelPaint)
         y += 16f
@@ -65,6 +84,20 @@ object ExportHelper {
         canvas.drawText("TOTAL: ${inrFormat.format(r.total)}", 380f, y, boldPaint)
 
         pdf.finishPage(page)
+        pages.add(page)
+
+        // Stamp "Page X of Y" on every page now that the final count is known.
+        val totalPages = pages.size
+        if (totalPages > 1) {
+            pages.forEachIndexed { index, finishedPage ->
+                finishedPage.canvas.drawText(
+                    "Page ${index + 1} of $totalPages",
+                    RIGHT - 90f,
+                    (PAGE_HEIGHT - 30).toFloat(),
+                    footerPaint
+                )
+            }
+        }
 
         val exportDir = File(context.cacheDir, "exports").apply { mkdirs() }
         val safeName = r.shopName.ifBlank { "receipt" }.replace(Regex("[^A-Za-z0-9_-]"), "_")
@@ -72,6 +105,34 @@ object ExportHelper {
         FileOutputStream(file).use { pdf.writeTo(it) }
         pdf.close()
         return file
+    }
+
+    /** Draws the shop/invoice header block and returns the Y position to continue drawing from. */
+    private fun drawReceiptHeader(canvas: android.graphics.Canvas, r: com.muraly.receiptscanner.data.local.entity.ReceiptEntity, isFirstPage: Boolean): Float {
+        var y = TOP_MARGIN
+        canvas.drawText(r.shopName.ifBlank { "Receipt" }, LEFT, y, titlePaint)
+        y += 22f
+        canvas.drawText("Invoice: ${r.invoiceNumber.ifBlank { "-" }}", LEFT, y, labelPaint)
+        y += 16f
+        canvas.drawText("Date: ${r.date}  ${r.time}", LEFT, y, labelPaint)
+        y += 16f
+        canvas.drawText("Payment: ${r.paymentMethod.ifBlank { "-" }}", LEFT, y, labelPaint)
+        if (!isFirstPage) {
+            canvas.drawText("(continued)", 450f, TOP_MARGIN, footerPaint)
+        }
+        y += 26f
+        return y
+    }
+
+    private fun drawItemsTableHeader(canvas: android.graphics.Canvas, startY: Float): Float {
+        var y = startY
+        canvas.drawText("Item", LEFT, y, boldPaint)
+        canvas.drawText("Qty", 360f, y, boldPaint)
+        canvas.drawText("Amount", 470f, y, boldPaint)
+        y += 8f
+        canvas.drawLine(LEFT, y, RIGHT, y, labelPaint)
+        y += 18f
+        return y
     }
 
     fun exportToCsv(context: Context, receipts: List<ReceiptWithItems>): File {
