@@ -58,6 +58,7 @@ dependencies {
     // Navigation & MVVM
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.lifecycle.livedata.ktx)
+implementation(libs.androidx.activity.ktx)
 
     // Room Database
     implementation(libs.androidx.room.runtime)
