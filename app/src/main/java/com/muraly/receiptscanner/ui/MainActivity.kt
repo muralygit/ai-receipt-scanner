@@ -23,6 +23,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private lateinit var adapter: ReceiptAdapter
+    private val inrFormat = java.text.NumberFormat.getCurrencyInstance(java.util.Locale("en", "IN"))
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,6 +55,15 @@ class MainActivity : AppCompatActivity() {
             adapter.submitList(receipts)
             binding.tvEmptyState.visibility =
                 if (receipts.isEmpty()) android.view.View.VISIBLE else android.view.View.GONE
+
+            val grandTotal = receipts.sumOf { it.receipt.total }
+            val count = receipts.size
+            binding.tvSummary.text = if (count == 0) {
+                ""
+            } else {
+                val label = if (count == 1) "1 receipt" else "$count receipts"
+                "$label  •  Total ${inrFormat.format(grandTotal)}"
+            }
         }
 
         binding.etSearch.addTextChangedListener(object : TextWatcher {
