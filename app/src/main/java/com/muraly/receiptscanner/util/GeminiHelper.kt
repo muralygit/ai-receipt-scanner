@@ -58,7 +58,7 @@ class GeminiHelper {
             }
 
             val endpoint =
-                "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey"
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=$apiKey"
 
             val prompt = """
                 You are given raw OCR text from an Indian retail receipt (may include GST/CGST/SGST/IGST).
