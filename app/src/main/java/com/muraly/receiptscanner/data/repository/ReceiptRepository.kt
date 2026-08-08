@@ -30,4 +30,13 @@ class ReceiptRepository(private val receiptDao: ReceiptDao) {
     suspend fun deleteReceipt(receipt: ReceiptEntity) = withContext(Dispatchers.IO) {
         receiptDao.deleteReceipt(receipt)
     }
+
+    suspend fun findPotentialDuplicate(
+        shopName: String,
+        invoiceNumber: String,
+        date: String,
+        total: Double
+    ): ReceiptEntity? = withContext(Dispatchers.IO) {
+        receiptDao.findPotentialDuplicate(shopName, invoiceNumber, date, total)
+    }
 }

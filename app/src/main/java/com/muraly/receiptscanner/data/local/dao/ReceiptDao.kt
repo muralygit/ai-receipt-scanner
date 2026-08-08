@@ -38,6 +38,27 @@ interface ReceiptDao {
     @Delete
     suspend fun deleteReceipt(receipt: ReceiptEntity)
 
+    /**
+     * Looks for a likely duplicate of a receipt about to be saved: either a matching
+     * non-blank invoice number, or the same shop + date + total (small epsilon for
+     * floating point). Used to warn the user before they accidentally save the same
+     * receipt twice.
+     */
+    @Query(
+        """
+        SELECT * FROM receipts
+        WHERE (:invoiceNumber != '' AND invoiceNumber = :invoiceNumber)
+           OR (shopName = :shopName AND date = :date AND ABS(total - :total) < 0.01)
+        LIMIT 1
+        """
+    )
+    suspend fun findPotentialDuplicate(
+        shopName: String,
+        invoiceNumber: String,
+        date: String,
+        total: Double
+    ): ReceiptEntity?
+
     @Transaction
     @Query("SELECT * FROM receipts ORDER BY createdAt DESC")
     fun getAllReceipts(): Flow<List<ReceiptWithItems>>

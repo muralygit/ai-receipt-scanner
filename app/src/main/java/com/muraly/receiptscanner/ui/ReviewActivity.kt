@@ -6,6 +6,7 @@ import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.widget.Toast
 import androidx.activity.viewModels
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.gson.Gson
 import com.muraly.receiptscanner.ReceiptScannerApplication
@@ -63,6 +64,21 @@ class ReviewActivity : AppCompatActivity() {
             if (success) {
                 Toast.makeText(this, "Receipt saved", Toast.LENGTH_SHORT).show()
                 finish()
+            }
+        }
+
+        viewModel.duplicateDetected.observe(this) { duplicate ->
+            if (duplicate != null) {
+                AlertDialog.Builder(this)
+                    .setTitle("Possible duplicate")
+                    .setMessage(
+                        "A receipt from \"${duplicate.shopName}\" on ${duplicate.date} " +
+                            "for the same total already exists. Save this one anyway?"
+                    )
+                    .setPositiveButton("Save Anyway") { _, _ -> viewModel.confirmSaveDespiteDuplicate() }
+                    .setNegativeButton("Cancel") { _, _ -> viewModel.dismissDuplicateWarning() }
+                    .setCancelable(false)
+                    .show()
             }
         }
     }
