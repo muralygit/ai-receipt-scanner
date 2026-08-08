@@ -1,5 +1,6 @@
 package com.muraly.receiptscanner.ui
 
+import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -67,8 +68,16 @@ class ReviewActivity : AppCompatActivity() {
 
         viewModel.saveSuccess.observe(this) { success ->
             if (success) {
-                Toast.makeText(this, "Receipt saved", Toast.LENGTH_SHORT).show()
-                finish()
+                AlertDialog.Builder(this)
+                    .setTitle("Receipt saved")
+                    .setMessage("Would you like to scan another receipt now, or return to your list?")
+                    .setPositiveButton("Scan Another") { _, _ ->
+                        startActivity(Intent(this, ScanActivity::class.java))
+                        finish()
+                    }
+                    .setNegativeButton("Done") { _, _ -> finish() }
+                    .setCancelable(false)
+                    .show()
             }
         }
 

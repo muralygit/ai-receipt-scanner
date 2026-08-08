@@ -27,6 +27,7 @@
     <string name="section_by_category">By Category</string>
     <string name="section_by_month">By Month</string>
     <string name="empty_insights">No category data yet.</string>
+    <string name="receipt_photo">Receipt photo</string>
 
     <string name="hint_shop_name">Shop Name</string>
     <string name="hint_invoice_number">Invoice Number</string>

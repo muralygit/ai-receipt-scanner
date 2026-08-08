@@ -1,6 +1,7 @@
 package com.muraly.receiptscanner.ui
 
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.widget.Toast
@@ -75,6 +76,7 @@ class DetailActivity : AppCompatActivity() {
         binding.tvDateTime.text = listOf(r.date, r.time).filter { it.isNotBlank() }.joinToString(" • ")
         binding.tvPaymentMethod.text = "Payment: ${r.paymentMethod.ifBlank { "-" }}"
         binding.tvCategory.text = r.category.ifBlank { "General" }
+        loadReceiptThumbnail(r.imageUri)
 
         binding.itemsContainer.removeAllViews()
         data.items.forEach { item ->
@@ -88,6 +90,51 @@ class DetailActivity : AppCompatActivity() {
         binding.tvSubtotal.text = "Subtotal: ${inrFormat.format(r.subtotal)}"
         binding.tvGst.text = "GST: ${inrFormat.format(r.gst)}"
         binding.tvTotal.text = "Total: ${inrFormat.format(r.total)}"
+    }
+
+    /**
+     * Loads the receipt photo into the thumbnail ImageView if it still exists on disk.
+     * Photos live in cacheDir, which Android is allowed to clear under storage pressure,
+     * so a missing file here just means the thumbnail silently hides rather than crashing —
+     * the saved receipt data itself is unaffected either way.
+     */
+    private fun loadReceiptThumbnail(imageUri: String) {
+        if (imageUri.isBlank()) {
+            binding.ivReceiptThumbnail.visibility = android.view.View.GONE
+            return
+        }
+        val file = java.io.File(imageUri)
+        if (!file.exists()) {
+            binding.ivReceiptThumbnail.visibility = android.view.View.GONE
+            return
+        }
+
+        val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(imageUri, options)
+        var sampleSize = 1
+        while (options.outWidth / sampleSize > 800) sampleSize *= 2
+        val finalOptions = BitmapFactory.Options().apply { inSampleSize = sampleSize }
+        val bitmap = BitmapFactory.decodeFile(imageUri, finalOptions)
+
+        if (bitmap == null) {
+            binding.ivReceiptThumbnail.visibility = android.view.View.GONE
+            return
+        }
+
+        binding.ivReceiptThumbnail.setImageBitmap(bitmap)
+        binding.ivReceiptThumbnail.visibility = android.view.View.VISIBLE
+        binding.ivReceiptThumbnail.setOnClickListener {
+            try {
+                val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
+                val viewIntent = Intent(Intent.ACTION_VIEW).apply {
+                    setDataAndType(uri, "image/*")
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                startActivity(Intent.createChooser(viewIntent, "View Receipt Photo"))
+            } catch (e: Exception) {
+                Toast.makeText(this, "Could not open photo: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun openEditMode() {

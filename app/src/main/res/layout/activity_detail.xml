@@ -29,6 +29,16 @@
             android:orientation="vertical"
             android:padding="16dp">
 
+            <ImageView
+                android:id="@+id/ivReceiptThumbnail"
+                android:layout_width="match_parent"
+                android:layout_height="180dp"
+                android:layout_marginBottom="12dp"
+                android:background="#EEEEEE"
+                android:scaleType="centerCrop"
+                android:visibility="gone"
+                android:contentDescription="@string/receipt_photo" />
+
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
