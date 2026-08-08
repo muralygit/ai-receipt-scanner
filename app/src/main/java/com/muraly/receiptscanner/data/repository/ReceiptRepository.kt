@@ -22,6 +22,11 @@ class ReceiptRepository(private val receiptDao: ReceiptDao) {
             receiptDao.insertReceiptWithItems(receipt, items)
         }
 
+    suspend fun updateReceiptWithItems(receipt: ReceiptEntity, items: List<ReceiptItemEntity>) =
+        withContext(Dispatchers.IO) {
+            receiptDao.updateReceiptWithItems(receipt, items)
+        }
+
     suspend fun deleteReceipt(receipt: ReceiptEntity) = withContext(Dispatchers.IO) {
         receiptDao.deleteReceipt(receipt)
     }

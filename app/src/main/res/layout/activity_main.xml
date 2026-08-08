@@ -29,9 +29,19 @@
                 android:hint="Search shop name, items..." />
 
             <ImageButton
+                android:id="@+id/btnExportCsv"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/action_export_csv"
+                android:src="@android:drawable/ic_menu_save" />
+
+            <ImageButton
                 android:id="@+id/btnSettings"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/title_settings"
                 android:src="@android:drawable/ic_menu_preferences" />
         </LinearLayout>
     </com.google.android.material.appbar.AppBarLayout>
@@ -40,7 +50,19 @@
         android:id="@+id/rvReceipts"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:paddingBottom="88dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+
+    <TextView
+        android:id="@+id/tvEmptyState"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="@string/empty_receipts"
+        android:textColor="#9E9E9E"
+        android:textSize="16sp"
+        android:visibility="gone" />
 
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/fabScan"

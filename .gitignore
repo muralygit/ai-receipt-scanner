@@ -1,8 +1,20 @@
-node_modules/
+# Android / Gradle
+*.iml
+.gradle/
+/local.properties
+.idea/
+.DS_Store
 build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+
+# Misc
+node_modules/
 dist/
 coverage/
-.DS_Store
 *.log
 .env*
 !.env.example
