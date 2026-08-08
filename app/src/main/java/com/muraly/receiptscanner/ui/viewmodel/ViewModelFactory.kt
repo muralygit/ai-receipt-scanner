@@ -31,6 +31,9 @@ class ViewModelFactory(
             modelClass.isAssignableFrom(DetailViewModel::class.java) ->
                 DetailViewModel(repository) as T
 
+            modelClass.isAssignableFrom(InsightsViewModel::class.java) ->
+                InsightsViewModel(repository) as T
+
             else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
         }
     }

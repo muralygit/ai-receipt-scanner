@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
+import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
@@ -39,6 +40,10 @@ class ReviewActivity : AppCompatActivity() {
         setContentView(binding.root)
         setSupportActionBar(binding.toolbar)
         binding.toolbar.setNavigationOnClickListener { finish() }
+
+        val categoryAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, CATEGORIES)
+        categoryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        binding.spinnerCategory.adapter = categoryAdapter
 
         imageUri = intent.getStringExtra(EXTRA_IMAGE_URI).orEmpty()
         rawOcrText = intent.getStringExtra(EXTRA_RAW_OCR_TEXT).orEmpty()
@@ -92,6 +97,9 @@ class ReviewActivity : AppCompatActivity() {
         binding.etGst.setText(formatNumber(parsed.gst))
         binding.etTotal.setText(formatNumber(parsed.total))
         binding.etPaymentMethod.setText(parsed.paymentMethod)
+
+        val categoryIndex = CATEGORIES.indexOf(parsed.category).let { if (it >= 0) it else 0 }
+        binding.spinnerCategory.setSelection(categoryIndex)
 
         binding.itemsContainer.removeAllViews()
         itemRows.clear()
@@ -177,6 +185,7 @@ class ReviewActivity : AppCompatActivity() {
             imageUri = imageUri,
             rawOcrText = rawOcrText,
             items = items,
+            category = binding.spinnerCategory.selectedItem as String,
             existingReceiptId = existingReceiptId
         )
     }
@@ -186,5 +195,10 @@ class ReviewActivity : AppCompatActivity() {
         const val EXTRA_IMAGE_URI = "extra_image_uri"
         const val EXTRA_RAW_OCR_TEXT = "extra_raw_ocr_text"
         const val EXTRA_RECEIPT_ID = "extra_receipt_id"
+
+        val CATEGORIES = listOf(
+            "General", "Groceries", "Medical", "Dining", "Fuel",
+            "Electronics", "Household", "Clothing", "Utilities", "Entertainment", "Other"
+        )
     }
 }

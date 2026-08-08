@@ -17,5 +17,6 @@ data class ReceiptEntity(
     val paymentMethod: String,
     val imageUri: String,
     val rawOcrText: String,
+    val category: String = "General",
     val createdAt: Long = System.currentTimeMillis()
 )

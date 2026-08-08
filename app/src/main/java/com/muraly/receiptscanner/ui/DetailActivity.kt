@@ -74,6 +74,7 @@ class DetailActivity : AppCompatActivity() {
         binding.tvInvoiceNumber.text = "Invoice: ${r.invoiceNumber.ifBlank { "-" }}"
         binding.tvDateTime.text = listOf(r.date, r.time).filter { it.isNotBlank() }.joinToString(" • ")
         binding.tvPaymentMethod.text = "Payment: ${r.paymentMethod.ifBlank { "-" }}"
+        binding.tvCategory.text = r.category.ifBlank { "General" }
 
         binding.itemsContainer.removeAllViews()
         data.items.forEach { item ->
@@ -100,7 +101,8 @@ class DetailActivity : AppCompatActivity() {
             subtotal = data.receipt.subtotal,
             gst = data.receipt.gst,
             total = data.receipt.total,
-            paymentMethod = data.receipt.paymentMethod
+            paymentMethod = data.receipt.paymentMethod,
+            category = data.receipt.category
         )
         val intent = Intent(this, ReviewActivity::class.java).apply {
             putExtra(ReviewActivity.EXTRA_PARSED_RESULT_JSON, Gson().toJson(parsed))

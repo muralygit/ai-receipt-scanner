@@ -35,6 +35,7 @@ class ReviewViewModel(private val repository: ReceiptRepository) : ViewModel() {
         shopName: String, invoiceNumber: String, date: String, time: String,
         subtotal: Double, gst: Double, total: Double, paymentMethod: String,
         imageUri: String, rawOcrText: String, items: List<ParsedReceiptItem>,
+        category: String = "General",
         existingReceiptId: Long? = null,
         forceSave: Boolean = false
     ) {
@@ -46,7 +47,7 @@ class ReviewViewModel(private val repository: ReceiptRepository) : ViewModel() {
                     id = existingReceiptId ?: 0,
                     shopName = shopName, invoiceNumber = invoiceNumber, date = date, time = time,
                     subtotal = subtotal, gst = gst, total = total, paymentMethod = paymentMethod,
-                    imageUri = imageUri, rawOcrText = rawOcrText
+                    imageUri = imageUri, rawOcrText = rawOcrText, category = category
                 )
                 val itemEntities = items.map {
                     ReceiptItemEntity(

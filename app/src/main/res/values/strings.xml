@@ -5,6 +5,7 @@
     <string name="title_scan_receipt">Scan Receipt</string>
     <string name="title_review_receipt">Review Receipt</string>
     <string name="title_receipt_detail">Receipt Detail</string>
+    <string name="title_insights">Spending Insights</string>
 
     <string name="empty_receipts">No receipts yet. Tap Scan Receipt to get started.</string>
 
@@ -23,9 +24,13 @@
 
     <string name="section_items">Items</string>
     <string name="section_totals">Totals</string>
+    <string name="section_by_category">By Category</string>
+    <string name="section_by_month">By Month</string>
+    <string name="empty_insights">No category data yet.</string>
 
     <string name="hint_shop_name">Shop Name</string>
     <string name="hint_invoice_number">Invoice Number</string>
+    <string name="hint_category">Category</string>
     <string name="hint_date">Date</string>
     <string name="hint_time">Time</string>
     <string name="hint_item_name">Item name</string>

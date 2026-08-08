@@ -10,9 +10,9 @@
     <application
         android:name=".ReceiptScannerApplication"
         android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher"
+        android:roundIcon="@drawable/ic_launcher"
         android:supportsRtl="true"
         android:theme="@style/Theme.AIReceiptScanner">
 
@@ -29,6 +29,7 @@
         <activity android:name=".ui.ReviewActivity" android:exported="false" />
         <activity android:name=".ui.DetailActivity" android:exported="false" />
         <activity android:name=".ui.SettingsActivity" android:exported="false" />
+        <activity android:name=".ui.InsightsActivity" android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

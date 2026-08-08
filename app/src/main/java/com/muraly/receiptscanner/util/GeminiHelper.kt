@@ -27,7 +27,8 @@ data class ParsedReceiptResult(
     @SerializedName("subtotal") val subtotal: Double = 0.0,
     @SerializedName("gst") val gst: Double = 0.0,
     @SerializedName("total") val total: Double = 0.0,
-    @SerializedName("payment_method") val paymentMethod: String = ""
+    @SerializedName("payment_method") val paymentMethod: String = "",
+    @SerializedName("category") val category: String = "General"
 )
 
 /** Thrown for any Gemini-related failure so the UI layer can show a clear message. */
@@ -74,13 +75,17 @@ class GeminiHelper {
                   "subtotal": 0,
                   "gst": 0,
                   "total": 0,
-                  "payment_method": ""
+                  "payment_method": "",
+                  "category": ""
                 }
 
                 Rules:
                 - qty and price/subtotal/gst/total must be plain numbers (no currency symbols, no commas).
                 - If a field cannot be found, use an empty string ("") or 0.
                 - date should be in YYYY-MM-DD format if determinable.
+                - category must be exactly one of: Groceries, Medical, Dining, Fuel, Electronics,
+                  Household, Clothing, Utilities, Entertainment, Other. Pick the closest match based
+                  on the shop name and items; use "Other" only if nothing fits well.
 
                 OCR TEXT:
                 $ocrText

@@ -111,10 +111,12 @@ class MainActivity : AppCompatActivity() {
         val popup = PopupMenu(this, binding.btnBackupMenu)
         popup.menu.add(0, 1, 0, "Backup all receipts")
         popup.menu.add(0, 2, 1, "Restore from backup")
+        popup.menu.add(0, 3, 2, "View spending insights")
         popup.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 1 -> { backupAllReceipts(); true }
                 2 -> { pickBackupFile.launch("application/json"); true }
+                3 -> { startActivity(Intent(this, InsightsActivity::class.java)); true }
                 else -> false
             }
         }
