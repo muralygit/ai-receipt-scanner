@@ -7,6 +7,7 @@ import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.widget.ArrayAdapter
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -40,7 +41,10 @@ class ReviewActivity : AppCompatActivity() {
         binding = ActivityReviewBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setSupportActionBar(binding.toolbar)
-        binding.toolbar.setNavigationOnClickListener { finish() }
+        binding.toolbar.setNavigationOnClickListener { confirmDiscard() }
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() { confirmDiscard() }
+        })
 
         val categoryAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, CATEGORIES)
         categoryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
@@ -167,6 +171,42 @@ class ReviewActivity : AppCompatActivity() {
     private fun formatNumber(value: Double): String =
         if (value == value.toLong().toDouble()) value.toLong().toString() else value.toString()
 
+    private fun confirmDiscard() {
+        AlertDialog.Builder(this)
+            .setTitle("Discard this receipt?")
+            .setMessage("You haven't saved this receipt yet. If you go back now, this data will be lost.")
+            .setPositiveButton("Discard") { _, _ -> finish() }
+            .setNegativeButton("Keep Editing", null)
+            .show()
+    }
+
+    /**
+     * Photos are initially captured/picked into the app's cache directory, which Android is
+     * free to clear under storage pressure. This copies the photo into permanent app storage
+     * at save time so a saved receipt's thumbnail can't silently disappear later. If the source
+     * file is already gone, or the copy fails for any reason, the original path is kept as-is —
+     * the receipt still saves fine, it just won't have a thumbnail (same as before this fix).
+     */
+    private fun persistImageIfNeeded(sourcePath: String): String {
+        if (sourcePath.isBlank()) return sourcePath
+
+        val permanentDir = java.io.File(filesDir, "receipt_images").apply { mkdirs() }
+        if (sourcePath.startsWith(permanentDir.absolutePath)) {
+            return sourcePath // already permanent (e.g. editing a receipt saved after this fix)
+        }
+
+        val sourceFile = java.io.File(sourcePath)
+        if (!sourceFile.exists()) return sourcePath
+
+        return try {
+            val destFile = java.io.File(permanentDir, "receipt_${System.currentTimeMillis()}_${sourceFile.name}")
+            sourceFile.copyTo(destFile, overwrite = true)
+            destFile.absolutePath
+        } catch (e: Exception) {
+            sourcePath
+        }
+    }
+
     private fun saveForm() {
         val shopName = binding.etShopName.text.toString().trim()
         if (shopName.isEmpty()) {
@@ -191,7 +231,7 @@ class ReviewActivity : AppCompatActivity() {
             gst = binding.etGst.text.toString().toDoubleOrNull() ?: 0.0,
             total = binding.etTotal.text.toString().toDoubleOrNull() ?: 0.0,
             paymentMethod = binding.etPaymentMethod.text.toString().trim(),
-            imageUri = imageUri,
+            imageUri = persistImageIfNeeded(imageUri),
             rawOcrText = rawOcrText,
             items = items,
             category = binding.spinnerCategory.selectedItem as String,

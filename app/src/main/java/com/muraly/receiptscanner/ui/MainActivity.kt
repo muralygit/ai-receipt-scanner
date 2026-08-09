@@ -68,8 +68,16 @@ class MainActivity : AppCompatActivity() {
 
         viewModel.receipts.observe(this) { receipts ->
             adapter.submitList(receipts)
-            binding.tvEmptyState.visibility =
-                if (receipts.isEmpty()) android.view.View.VISIBLE else android.view.View.GONE
+            if (receipts.isEmpty()) {
+                binding.tvEmptyState.visibility = android.view.View.VISIBLE
+                binding.tvEmptyState.text = if (binding.etSearch.text.isNullOrBlank()) {
+                    getString(com.muraly.receiptscanner.R.string.empty_receipts)
+                } else {
+                    getString(com.muraly.receiptscanner.R.string.empty_search_results)
+                }
+            } else {
+                binding.tvEmptyState.visibility = android.view.View.GONE
+            }
 
             val grandTotal = receipts.sumOf { it.receipt.total }
             val count = receipts.size

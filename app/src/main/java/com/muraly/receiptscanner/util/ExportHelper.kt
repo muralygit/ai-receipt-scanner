@@ -139,18 +139,18 @@ object ExportHelper {
         val exportDir = File(context.cacheDir, "exports").apply { mkdirs() }
         val file = File(exportDir, "receipts_export.csv")
         file.printWriter().use { out ->
-            out.println("Shop Name,Invoice,Date,Time,Item,Qty,Unit Price,Item Total,Subtotal,GST,Total,Payment Method")
+            out.println("Shop Name,Invoice,Date,Time,Category,Item,Qty,Unit Price,Item Total,Subtotal,GST,Total,Payment Method")
             receipts.forEach { rw ->
                 val r = rw.receipt
                 if (rw.items.isEmpty()) {
                     out.println(
-                        "\"${r.shopName}\",\"${r.invoiceNumber}\",${r.date},${r.time},,,,," +
+                        "\"${r.shopName}\",\"${r.invoiceNumber}\",${r.date},${r.time},\"${r.category}\",,,,," +
                             "${r.subtotal},${r.gst},${r.total},\"${r.paymentMethod}\""
                     )
                 } else {
                     rw.items.forEach { item ->
                         out.println(
-                            "\"${r.shopName}\",\"${r.invoiceNumber}\",${r.date},${r.time}," +
+                            "\"${r.shopName}\",\"${r.invoiceNumber}\",${r.date},${r.time},\"${r.category}\"," +
                                 "\"${item.name}\",${item.quantity},${item.unitPrice},${item.totalPrice}," +
                                 "${r.subtotal},${r.gst},${r.total},\"${r.paymentMethod}\""
                         )

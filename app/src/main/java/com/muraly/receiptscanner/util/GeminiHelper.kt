@@ -48,6 +48,22 @@ class GeminiHelper {
     private val gson = Gson()
 
     /**
+     * Lightweight check that an API key is actually valid and reachable, using the cheap
+     * ListModels endpoint (read-only, no generation quota used) rather than a full extraction
+     * call. Returns true only on a genuine successful response from Gemini.
+     */
+    suspend fun validateApiKey(apiKey: String): Boolean = withContext(Dispatchers.IO) {
+        if (apiKey.isBlank()) return@withContext false
+        val endpoint = "https://generativelanguage.googleapis.com/v1beta/models?key=$apiKey"
+        val request = Request.Builder().url(endpoint).get().build()
+        try {
+            client.newCall(request).execute().use { response -> response.isSuccessful }
+        } catch (e: IOException) {
+            false
+        }
+    }
+
+    /**
      * Sends OCR text (and, when available, the receipt photo itself) to Gemini and extracts
      * structured receipt data. Including the actual image matters: plain OCR text is a flat
      * string with no font-size or layout information, so the model has no reliable way to

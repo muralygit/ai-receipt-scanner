@@ -8,6 +8,7 @@
     <string name="title_insights">Spending Insights</string>
 
     <string name="empty_receipts">No receipts yet. Tap Scan Receipt to get started.</string>
+    <string name="empty_search_results">No receipts match your search.</string>
 
     <string name="action_capture">Capture photo</string>
     <string name="action_gallery">Gallery</string>
