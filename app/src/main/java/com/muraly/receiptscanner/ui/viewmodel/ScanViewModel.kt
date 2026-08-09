@@ -35,7 +35,7 @@ class ScanViewModel(
             try {
                 val ocrText = ocrHelper.recognizeText(bitmap)
                 _uiState.value = ScanUiState.AiProcessing
-                val parsedResult = geminiHelper.extractReceiptData(ocrText, apiKey)
+                val parsedResult = geminiHelper.extractReceiptData(ocrText, apiKey, bitmap)
                 _uiState.value = ScanUiState.Success(parsedResult, imageUriString, ocrText)
             } catch (e: Exception) {
                 _uiState.value = ScanUiState.Error("Failed: ${e.message}")

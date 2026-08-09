@@ -1,5 +1,7 @@
 package com.muraly.receiptscanner.util
 
+import android.graphics.Bitmap
+import android.util.Base64
 import com.google.gson.Gson
 import com.google.gson.JsonParser
 import com.google.gson.annotations.SerializedName
@@ -9,6 +11,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
@@ -45,16 +48,25 @@ class GeminiHelper {
     private val gson = Gson()
 
     /**
-     * Sends OCR text to Gemini and extracts structured receipt data.
+     * Sends OCR text (and, when available, the receipt photo itself) to Gemini and extracts
+     * structured receipt data. Including the actual image matters: plain OCR text is a flat
+     * string with no font-size or layout information, so the model has no reliable way to
+     * tell "big shop name printed at the top" apart from "small signature line at the bottom" —
+     * sending the photo lets it see that visual hierarchy directly instead of guessing from text order.
+     *
      * Handles Gemini's real response envelope (candidates -> content -> parts -> text)
      * and strips any ```json fencing the model adds before parsing the inner JSON.
      */
-    suspend fun extractReceiptData(ocrText: String, apiKey: String): ParsedReceiptResult =
+    suspend fun extractReceiptData(
+        ocrText: String,
+        apiKey: String,
+        bitmap: Bitmap? = null
+    ): ParsedReceiptResult =
         withContext(Dispatchers.IO) {
             if (apiKey.isBlank()) {
                 throw GeminiException("Gemini API key is missing. Add it in Settings.")
             }
-            if (ocrText.isBlank()) {
+            if (ocrText.isBlank() && bitmap == null) {
                 throw GeminiException("No text was detected on the receipt. Try rescanning with better lighting.")
             }
 
@@ -62,7 +74,12 @@ class GeminiHelper {
                 "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=$apiKey"
 
             val prompt = """
-                You are given raw OCR text from an Indian retail receipt (may include GST/CGST/SGST/IGST).
+                You are given a photo of an Indian retail receipt, along with OCR text extracted
+                from that same photo as a fallback in case the image is hard to read (may include
+                GST/CGST/SGST/IGST). Use the photo as the primary source of truth, especially for
+                telling apart the real shop name from other text on the receipt, since the image
+                shows font size and layout that the OCR text alone does not.
+
                 Extract the following fields and return ONLY a single valid JSON object, with no markdown
                 fences, no explanation, and no extra text before or after it:
 
@@ -86,20 +103,35 @@ class GeminiHelper {
                 - category must be exactly one of: Groceries, Medical, Dining, Fuel, Electronics,
                   Household, Clothing, Utilities, Entertainment, Other. Pick the closest match based
                   on the shop name and items; use "Other" only if nothing fits well.
-                - shop_name is the business name printed largest and closest to the TOP of the
-                  receipt (often in capitals, sometimes with "MEDICALS", "STORES", "SUPERMARKET" etc.
-                  in the name). Do NOT use a person's name that appears near a phone number in a
-                  signature, declaration, or footer line at the BOTTOM of the receipt — that is
-                  usually a staff member or proprietor's name, not the shop name.
+                - shop_name is the business name printed in the LARGEST font, at or near the TOP of
+                  the receipt — usually the letterhead/header. Do NOT use a smaller person's name that
+                  appears near a phone number in a signature, declaration, or footer line near the
+                  BOTTOM of the receipt — that is usually a staff member or proprietor's name, not
+                  the shop name, even if it looks like a business name.
 
-                OCR TEXT:
+                OCR TEXT (fallback only, may contain errors):
                 $ocrText
             """.trimIndent()
+
+            val parts = mutableListOf<Map<String, Any>>(mapOf("text" to prompt))
+            bitmap?.let {
+                val base64Image = encodeBitmapToBase64Jpeg(it)
+                if (base64Image != null) {
+                    parts.add(
+                        mapOf(
+                            "inline_data" to mapOf(
+                                "mime_type" to "image/jpeg",
+                                "data" to base64Image
+                            )
+                        )
+                    )
+                }
+            }
 
             val requestJson = gson.toJson(
                 mapOf(
                     "contents" to listOf(
-                        mapOf("parts" to listOf(mapOf("text" to prompt)))
+                        mapOf("parts" to parts)
                     ),
                     "generationConfig" to mapOf(
                         "temperature" to 0.1,
@@ -143,6 +175,30 @@ class GeminiHelper {
                 throw GeminiException("Could not parse the AI's response as JSON. Try rescanning.")
             }
         }
+
+    /** Downscales (if needed) and JPEG-encodes the bitmap to keep the request payload reasonable. */
+    private fun encodeBitmapToBase64Jpeg(bitmap: Bitmap): String? {
+        return try {
+            val maxDimension = 1600
+            val scaled = if (bitmap.width > maxDimension || bitmap.height > maxDimension) {
+                val scale = maxDimension.toFloat() / maxOf(bitmap.width, bitmap.height)
+                Bitmap.createScaledBitmap(
+                    bitmap,
+                    (bitmap.width * scale).toInt(),
+                    (bitmap.height * scale).toInt(),
+                    true
+                )
+            } else {
+                bitmap
+            }
+
+            val outputStream = ByteArrayOutputStream()
+            scaled.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
+            Base64.encodeToString(outputStream.toByteArray(), Base64.NO_WRAP)
+        } catch (e: Exception) {
+            null // fall back to OCR-text-only if encoding fails for any reason
+        }
+    }
 
     /** Pulls the model's text output out of Gemini's candidates[0].content.parts[0].text envelope. */
     private fun extractTextFromCandidates(rawJson: String): String? {
