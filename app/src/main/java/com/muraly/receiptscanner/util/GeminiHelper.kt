@@ -86,6 +86,11 @@ class GeminiHelper {
                 - category must be exactly one of: Groceries, Medical, Dining, Fuel, Electronics,
                   Household, Clothing, Utilities, Entertainment, Other. Pick the closest match based
                   on the shop name and items; use "Other" only if nothing fits well.
+                - shop_name is the business name printed largest and closest to the TOP of the
+                  receipt (often in capitals, sometimes with "MEDICALS", "STORES", "SUPERMARKET" etc.
+                  in the name). Do NOT use a person's name that appears near a phone number in a
+                  signature, declaration, or footer line at the BOTTOM of the receipt — that is
+                  usually a staff member or proprietor's name, not the shop name.
 
                 OCR TEXT:
                 $ocrText
