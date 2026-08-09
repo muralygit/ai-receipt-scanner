@@ -74,6 +74,7 @@ interface ReceiptDao {
         WHERE r.shopName LIKE '%' || :query || '%' 
         OR r.invoiceNumber LIKE '%' || :query || '%' 
         OR i.name LIKE '%' || :query || '%' 
+        OR r.rawOcrText LIKE '%' || :query || '%'
         ORDER BY r.createdAt DESC
     """)
     fun searchReceipts(query: String): Flow<List<ReceiptWithItems>>
