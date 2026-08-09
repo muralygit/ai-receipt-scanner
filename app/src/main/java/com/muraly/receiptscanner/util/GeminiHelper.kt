@@ -76,7 +76,8 @@ class GeminiHelper {
     suspend fun extractReceiptData(
         ocrText: String,
         apiKey: String,
-        bitmap: Bitmap? = null
+        bitmap: Bitmap? = null,
+        customInstructions: String = ""
     ): ParsedReceiptResult =
         withContext(Dispatchers.IO) {
             if (apiKey.isBlank()) {
@@ -124,7 +125,7 @@ class GeminiHelper {
                   appears near a phone number in a signature, declaration, or footer line near the
                   BOTTOM of the receipt — that is usually a staff member or proprietor's name, not
                   the shop name, even if it looks like a business name.
-
+                ${if (customInstructions.isNotBlank()) "\n                Additional context from this user, to help with ambiguous cases (follow these as guidance, but the visible content of the receipt always takes priority if it clearly contradicts them):\n                $customInstructions\n" else ""}
                 OCR TEXT (fallback only, may contain errors):
                 $ocrText
             """.trimIndent()

@@ -44,8 +44,36 @@ class SecurePreferencesHelper(context: Context) {
         sharedPreferences.edit().remove(KEY_GEMINI_API_KEY).apply()
     }
 
+    // --- Custom AI extraction preferences ---
+    // These aren't secrets, but reuse this same store for simplicity since it's already
+    // available everywhere via app.securePrefs.
+
+    fun saveCategoryBias(commaSeparatedCategories: String) {
+        sharedPreferences.edit().putString(KEY_CATEGORY_BIAS, commaSeparatedCategories).apply()
+    }
+
+    fun getCategoryBias(): String = sharedPreferences.getString(KEY_CATEGORY_BIAS, "") ?: ""
+
+    /** "DD/MM/YYYY" (default, matches Indian receipts) or "MM/DD/YYYY". */
+    fun saveDateFormatPreference(format: String) {
+        sharedPreferences.edit().putString(KEY_DATE_FORMAT, format).apply()
+    }
+
+    fun getDateFormatPreference(): String =
+        sharedPreferences.getString(KEY_DATE_FORMAT, "DD/MM/YYYY") ?: "DD/MM/YYYY"
+
+    fun saveCustomInstructions(instructions: String) {
+        sharedPreferences.edit().putString(KEY_CUSTOM_INSTRUCTIONS, instructions.trim()).apply()
+    }
+
+    fun getCustomInstructions(): String =
+        sharedPreferences.getString(KEY_CUSTOM_INSTRUCTIONS, "") ?: ""
+
     companion object {
         private const val PREFS_FILE_NAME = "receipt_prefs_encrypted"
         private const val KEY_GEMINI_API_KEY = "gemini_api_key"
+        private const val KEY_CATEGORY_BIAS = "category_bias"
+        private const val KEY_DATE_FORMAT = "date_format_preference"
+        private const val KEY_CUSTOM_INSTRUCTIONS = "custom_ai_instructions"
     }
 }
