@@ -11,14 +11,19 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.google.gson.Gson
 import com.muraly.receiptscanner.ReceiptScannerApplication
 import com.muraly.receiptscanner.databinding.ActivityReviewBinding
 import com.muraly.receiptscanner.databinding.ItemReviewRowBinding
 import com.muraly.receiptscanner.ui.viewmodel.ReviewViewModel
 import com.muraly.receiptscanner.ui.viewmodel.ViewModelFactory
+import com.muraly.receiptscanner.util.ImageHelper
 import com.muraly.receiptscanner.util.ParsedReceiptItem
 import com.muraly.receiptscanner.util.ParsedReceiptResult
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class ReviewActivity : AppCompatActivity() {
 
@@ -180,31 +185,33 @@ class ReviewActivity : AppCompatActivity() {
             .show()
     }
 
+    /** Path of the compressed, permanent copy once made, so a duplicate-warning retry doesn't make another. */
+    private var persistedImagePath: String? = null
+
     /**
      * Photos are initially captured/picked into the app's cache directory, which Android is
-     * free to clear under storage pressure. This copies the photo into permanent app storage
-     * at save time so a saved receipt's thumbnail can't silently disappear later. If the source
-     * file is already gone, or the copy fails for any reason, the original path is kept as-is —
-     * the receipt still saves fine, it just won't have a thumbnail (same as before this fix).
+     * free to clear under storage pressure. At save time this writes a compressed copy
+     * (max 1600 px, JPEG 80, rotation fixed) into permanent app storage so a saved receipt's
+     * thumbnail can't silently disappear and the file stays small. If the source file is gone
+     * or compression fails, the original path is kept as-is and the receipt still saves.
+     * Runs on a background thread.
      */
     private fun persistImageIfNeeded(sourcePath: String): String {
+        persistedImagePath?.let { return it }
         if (sourcePath.isBlank()) return sourcePath
-
-        val permanentDir = java.io.File(filesDir, "receipt_images").apply { mkdirs() }
-        if (sourcePath.startsWith(permanentDir.absolutePath)) {
-            return sourcePath // already permanent (e.g. editing a receipt saved after this fix)
+        if (ImageHelper.isPermanent(this, sourcePath)) {
+            return sourcePath // editing a receipt that already has a permanent photo
         }
 
         val sourceFile = java.io.File(sourcePath)
         if (!sourceFile.exists()) return sourcePath
 
-        return try {
-            val destFile = java.io.File(permanentDir, "receipt_${System.currentTimeMillis()}_${sourceFile.name}")
-            sourceFile.copyTo(destFile, overwrite = true)
-            destFile.absolutePath
-        } catch (e: Exception) {
-            sourcePath
-        }
+        val destFile = java.io.File(
+            ImageHelper.imageDir(this), "receipt_${System.currentTimeMillis()}.jpg"
+        )
+        val result = if (ImageHelper.compressToFile(sourceFile, destFile)) destFile.absolutePath else sourcePath
+        persistedImagePath = result
+        return result
     }
 
     private fun saveForm() {
@@ -222,21 +229,34 @@ class ReviewActivity : AppCompatActivity() {
             ParsedReceiptItem(name = name, qty = qty, price = price)
         }
 
-        viewModel.saveReceipt(
-            shopName = shopName,
-            invoiceNumber = binding.etInvoiceNumber.text.toString().trim(),
-            date = binding.etDate.text.toString().trim(),
-            time = binding.etTime.text.toString().trim(),
-            subtotal = binding.etSubtotal.text.toString().toDoubleOrNull() ?: 0.0,
-            gst = binding.etGst.text.toString().toDoubleOrNull() ?: 0.0,
-            total = binding.etTotal.text.toString().toDoubleOrNull() ?: 0.0,
-            paymentMethod = binding.etPaymentMethod.text.toString().trim(),
-            imageUri = persistImageIfNeeded(imageUri),
-            rawOcrText = rawOcrText,
-            items = items,
-            category = binding.spinnerCategory.selectedItem as String,
-            existingReceiptId = existingReceiptId
-        )
+        // Read every form value on the main thread first, then compress the photo off-thread.
+        val invoiceNumber = binding.etInvoiceNumber.text.toString().trim()
+        val date = binding.etDate.text.toString().trim()
+        val time = binding.etTime.text.toString().trim()
+        val subtotal = binding.etSubtotal.text.toString().toDoubleOrNull() ?: 0.0
+        val gst = binding.etGst.text.toString().toDoubleOrNull() ?: 0.0
+        val total = binding.etTotal.text.toString().toDoubleOrNull() ?: 0.0
+        val paymentMethod = binding.etPaymentMethod.text.toString().trim()
+        val category = binding.spinnerCategory.selectedItem as String
+
+        lifecycleScope.launch {
+            val storedImagePath = withContext(Dispatchers.IO) { persistImageIfNeeded(imageUri) }
+            viewModel.saveReceipt(
+                shopName = shopName,
+                invoiceNumber = invoiceNumber,
+                date = date,
+                time = time,
+                subtotal = subtotal,
+                gst = gst,
+                total = total,
+                paymentMethod = paymentMethod,
+                imageUri = storedImagePath,
+                rawOcrText = rawOcrText,
+                items = items,
+                category = category,
+                existingReceiptId = existingReceiptId
+            )
+        }
     }
 
     companion object {

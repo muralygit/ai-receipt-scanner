@@ -6,6 +6,8 @@ import com.muraly.receiptscanner.data.local.entity.ReceiptItemEntity
 import com.muraly.receiptscanner.data.local.entity.ReceiptWithItems
 import kotlinx.coroutines.flow.Flow
 
+data class ImagePathRow(val id: Long, val imageUri: String)
+
 @Dao
 interface ReceiptDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -34,6 +36,12 @@ interface ReceiptDao {
         deleteItemsForReceipt(receipt.id)
         insertReceiptItems(items.map { it.copy(receiptId = receipt.id) })
     }
+
+    @Query("SELECT id, imageUri FROM receipts WHERE imageUri != ''")
+    suspend fun getAllImagePaths(): List<ImagePathRow>
+
+    @Query("UPDATE receipts SET imageUri = :imageUri WHERE id = :id")
+    suspend fun updateImageUri(id: Long, imageUri: String)
 
     @Delete
     suspend fun deleteReceipt(receipt: ReceiptEntity)

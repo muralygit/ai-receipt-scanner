@@ -21,7 +21,9 @@ import com.muraly.receiptscanner.ui.viewmodel.ViewModelFactory
 import com.muraly.receiptscanner.util.BackupException
 import com.muraly.receiptscanner.util.BackupHelper
 import com.muraly.receiptscanner.util.ExportHelper
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
@@ -123,7 +125,7 @@ class MainActivity : AppCompatActivity() {
         popup.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 1 -> { backupAllReceipts(); true }
-                2 -> { pickBackupFile.launch("application/json"); true }
+                2 -> { pickBackupFile.launch("*/*"); true }
                 3 -> { startActivity(Intent(this, InsightsActivity::class.java)); true }
                 else -> false
             }
@@ -137,47 +139,64 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "No receipts to back up yet", Toast.LENGTH_SHORT).show()
             return
         }
-        try {
-            val file = BackupHelper.exportBackup(this, receipts)
-            val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
-            val intent = Intent(Intent.ACTION_SEND).apply {
-                type = "application/json"
-                putExtra(Intent.EXTRA_STREAM, uri)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        lifecycleScope.launch {
+            try {
+                val file = withContext(Dispatchers.IO) { BackupHelper.exportBackup(this@MainActivity, receipts) }
+                val uri = FileProvider.getUriForFile(this@MainActivity, "$packageName.fileprovider", file)
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "application/zip"
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                startActivity(Intent.createChooser(intent, "Save backup to"))
+            } catch (e: Exception) {
+                Toast.makeText(this@MainActivity, "Backup failed: ${e.message}", Toast.LENGTH_LONG).show()
             }
-            startActivity(Intent.createChooser(intent, "Save backup to"))
-        } catch (e: Exception) {
-            Toast.makeText(this, "Backup failed: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 
     private fun restoreFromBackup(uri: Uri) {
         lifecycleScope.launch {
             try {
-                val backup = BackupHelper.readBackup(this@MainActivity, uri)
+                val contents = withContext(Dispatchers.IO) { BackupHelper.readBackup(this@MainActivity, uri) }
+                val backup = contents.backup
+                val photoNote = if (contents.extractedImages != null) " with photos" else " (no photos in this older backup format)"
                 AlertDialog.Builder(this@MainActivity)
                     .setTitle("Restore backup?")
                     .setMessage(
-                        "This backup contains ${BackupHelper.receiptCountOf(backup)} receipt(s) from " +
+                        "This backup contains ${BackupHelper.receiptCountOf(backup)} receipt(s)$photoNote from " +
                             "${backup.exportedAt ?: "an earlier date"}. They'll be added to your existing receipts " +
                             "(nothing currently saved will be deleted). Continue?"
                     )
                     .setPositiveButton("Restore") { _, _ ->
                         lifecycleScope.launch {
                             var imported = 0
-                            for (backupReceipt in backup.receipts.orEmpty()) {
-                                val (receipt, items) = BackupHelper.toEntities(backupReceipt)
-                                app.repository.insertReceiptWithItems(receipt, items)
-                                imported++
+                            try {
+                                for (backupReceipt in backup.receipts.orEmpty()) {
+                                    val (receipt, items) = withContext(Dispatchers.IO) {
+                                        BackupHelper.toEntities(this@MainActivity, backupReceipt, contents.extractedImages)
+                                    }
+                                    app.repository.insertReceiptWithItems(receipt, items)
+                                    imported++
+                                }
+                                Toast.makeText(
+                                    this@MainActivity,
+                                    "Restored $imported receipt(s)",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            } catch (e: Exception) {
+                                Toast.makeText(
+                                    this@MainActivity,
+                                    "Restore stopped after $imported receipt(s): ${e.message}",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            } finally {
+                                withContext(Dispatchers.IO) { BackupHelper.cleanup(contents) }
                             }
-                            Toast.makeText(
-                                this@MainActivity,
-                                "Restored $imported receipt(s)",
-                                Toast.LENGTH_LONG
-                            ).show()
                         }
                     }
-                    .setNegativeButton("Cancel", null)
+                    .setNegativeButton("Cancel") { _, _ -> BackupHelper.cleanup(contents) }
+                    .setOnCancelListener { BackupHelper.cleanup(contents) }
                     .show()
             } catch (e: BackupException) {
                 Toast.makeText(this@MainActivity, e.message, Toast.LENGTH_LONG).show()
