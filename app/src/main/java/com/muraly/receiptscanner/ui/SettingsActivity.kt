@@ -20,6 +20,10 @@ class SettingsActivity : AppCompatActivity() {
         val app = application as com.muraly.receiptscanner.ReceiptScannerApplication
         binding.etApiKey.setText(app.securePrefs.getGeminiApiKey() ?: "")
 
+        binding.btnSetupHelp.setOnClickListener {
+            startActivity(android.content.Intent(this, GuideActivity::class.java))
+        }
+
         binding.btnSaveKey.setOnClickListener {
             val key = binding.etApiKey.text.toString().trim()
             if (key.isEmpty()) {

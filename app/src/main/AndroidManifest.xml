@@ -30,6 +30,7 @@
         <activity android:name=".ui.DetailActivity" android:exported="false" />
         <activity android:name=".ui.SettingsActivity" android:exported="false" />
         <activity android:name=".ui.InsightsActivity" android:exported="false" />
+        <activity android:name=".ui.GuideActivity" android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

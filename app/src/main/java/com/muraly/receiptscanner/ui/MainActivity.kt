@@ -122,11 +122,13 @@ class MainActivity : AppCompatActivity() {
         popup.menu.add(0, 1, 0, "Backup all receipts")
         popup.menu.add(0, 2, 1, "Restore from backup")
         popup.menu.add(0, 3, 2, "View spending insights")
+        popup.menu.add(0, 4, 3, "User guide")
         popup.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 1 -> { backupAllReceipts(); true }
                 2 -> { pickBackupFile.launch("*/*"); true }
                 3 -> { startActivity(Intent(this, InsightsActivity::class.java)); true }
+                4 -> { startActivity(Intent(this, GuideActivity::class.java)); true }
                 else -> false
             }
         }
