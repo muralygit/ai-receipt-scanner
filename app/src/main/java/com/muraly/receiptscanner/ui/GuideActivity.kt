@@ -2,6 +2,7 @@ package com.muraly.receiptscanner.ui
 
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.text.util.Linkify
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.ViewGroup
@@ -141,6 +142,10 @@ class GuideActivity : AppCompatActivity() {
     }
 
     private fun bodyText(text: String) = TextView(this).apply {
+        // Make web addresses (e.g. aistudio.google.com) tappable. The mask must be set before the text.
+        autoLinkMask = Linkify.WEB_URLS
+        linksClickable = true
+        setLinkTextColor(MaterialColors.getColor(this, com.google.android.material.R.attr.colorPrimary))
         this.text = text
         setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
         setLineSpacing(0f, 1.2f)
