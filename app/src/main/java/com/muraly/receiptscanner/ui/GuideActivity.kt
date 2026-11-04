@@ -1,13 +1,16 @@
 package com.muraly.receiptscanner.ui
 
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.muraly.receiptscanner.R
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.button.MaterialButton
@@ -18,9 +21,17 @@ import com.google.android.material.color.MaterialColors
  */
 class GuideActivity : AppCompatActivity() {
 
+    /** One paragraph of a step-by-step section, with an optional screenshot underneath. */
+    private data class Step(
+        val en: String, val ml: String,
+        val image: Int? = null,
+        val imageWidthDp: Int? = null
+    )
+
     private data class Section(
         val titleEn: String, val bodyEn: String,
-        val titleMl: String, val bodyMl: String
+        val titleMl: String, val bodyMl: String,
+        val steps: List<Step>? = null
     )
 
     private lateinit var content: LinearLayout
@@ -115,11 +126,44 @@ class GuideActivity : AppCompatActivity() {
                 setTextColor(accent)
                 setPadding(0, dp(18), 0, dp(6))
             })
-            content.addView(TextView(this).apply {
-                text = if (isMl) section.bodyMl else section.bodyEn
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
-                setLineSpacing(0f, 1.2f)
-            })
+            val steps = section.steps
+            if (steps == null) {
+                content.addView(bodyText(if (isMl) section.bodyMl else section.bodyEn))
+            } else {
+                for (step in steps) {
+                    content.addView(bodyText(if (isMl) step.ml else step.en).apply {
+                        setPadding(0, dp(8), 0, 0)
+                    })
+                    step.image?.let { content.addView(screenshot(it, step.imageWidthDp)) }
+                }
+            }
+        }
+    }
+
+    private fun bodyText(text: String) = TextView(this).apply {
+        this.text = text
+        setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+        setLineSpacing(0f, 1.2f)
+    }
+
+    private fun screenshot(resId: Int, widthDp: Int?) = ImageView(this).apply {
+        setImageResource(resId)
+        adjustViewBounds = true
+        scaleType = ImageView.ScaleType.FIT_CENTER
+        contentDescription = "Screenshot"
+        val frame = GradientDrawable().apply {
+            setStroke(dp(1), 0x55808080)
+            cornerRadius = dp(8).toFloat()
+        }
+        background = frame
+        setPadding(dp(2), dp(2), dp(2), dp(2))
+        layoutParams = LinearLayout.LayoutParams(
+            if (widthDp != null) dp(widthDp) else ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        ).apply {
+            topMargin = dp(8)
+            bottomMargin = dp(4)
+            gravity = Gravity.CENTER_HORIZONTAL
         }
     }
 
@@ -136,20 +180,54 @@ class GuideActivity : AppCompatActivity() {
 
         private val SECTIONS = listOf(
             Section(
-                "1. Set up your Gemini key",
-                "The app uses Google Gemini to understand your receipts, so it needs a free API key.\n" +
-                    "1. Open aistudio.google.com/apikey in your browser and sign in with a Google account.\n" +
-                    "2. Create an API key and copy it.\n" +
-                    "3. In this app, tap the spanner icon (top right) to open Settings.\n" +
-                    "4. Paste the key and tap Save API Key. The app checks it (internet needed) and saves it.\n" +
-                    "You only need to do this once.",
-                "1. Gemini key സജ്ജമാക്കുക",
-                "രസീതുകൾ മനസ്സിലാക്കാൻ ആപ്പ് Google Gemini ഉപയോഗിക്കുന്നു, അതിനാൽ ഒരു സൗജന്യ API key ആവശ്യമാണ്.\n" +
-                    "1. ബ്രൗസറിൽ aistudio.google.com/apikey തുറന്ന് Google അക്കൗണ്ടിൽ സൈൻ ഇൻ ചെയ്യുക.\n" +
-                    "2. ഒരു API key ഉണ്ടാക്കി കോപ്പി ചെയ്യുക.\n" +
-                    "3. ഈ ആപ്പിൽ മുകളിൽ വലതുവശത്തുള്ള സ്പാനർ ഐക്കൺ തൊട്ട് Settings തുറക്കുക.\n" +
-                    "4. key പേസ്റ്റ് ചെയ്ത് Save API Key അമർത്തുക. ആപ്പ് അത് പരിശോധിച്ച് (ഇന്റർനെറ്റ് വേണം) സേവ് ചെയ്യും.\n" +
-                    "ഇത് ഒരിക്കൽ മാത്രം ചെയ്താൽ മതി."
+                "1. Set up your Gemini key", "",
+                "1. Gemini key സജ്ജമാക്കുക", "",
+                steps = listOf(
+                    Step(
+                        "The app uses Google Gemini to understand your receipts, so it needs a free API key. " +
+                            "You only need to do this once.",
+                        "രസീതുകൾ മനസ്സിലാക്കാൻ ആപ്പ് Google Gemini ഉപയോഗിക്കുന്നു, അതിനാൽ ഒരു സൗജന്യ API key ആവശ്യമാണ്. " +
+                            "ഇത് ഒരിക്കൽ മാത്രം ചെയ്താൽ മതി."
+                    ),
+                    Step(
+                        "1. In your phone's browser, open aistudio.google.com and sign in with your Google account.",
+                        "1. ഫോണിലെ ബ്രൗസറിൽ aistudio.google.com തുറന്ന് നിങ്ങളുടെ Google അക്കൗണ്ടിൽ സൈൻ ഇൻ ചെയ്യുക."
+                    ),
+                    Step(
+                        "2. If the side menu is hidden, tap ☰ to open it. Then tap the key icon (circled in red) at the " +
+                            "bottom of the menu. This opens the API Keys page. Shortcut: open aistudio.google.com/apikey directly.",
+                        "2. സൈഡ് മെനു കാണുന്നില്ലെങ്കിൽ ☰ അമർത്തി തുറക്കുക. തുടർന്ന് മെനുവിന്റെ ഏറ്റവും താഴെയുള്ള കീ ഐക്കൺ " +
+                            "(ചുവന്ന വൃത്തത്തിൽ) അമർത്തുക. അപ്പോൾ API Keys പേജ് തുറക്കും. കുറുക്കുവഴി: " +
+                            "aistudio.google.com/apikey നേരിട്ട് തുറക്കാം.",
+                        R.drawable.guide_menu, 200
+                    ),
+                    Step(
+                        "3. If a key is already listed, tap its copy icon (two squares, circled in red). If the list is " +
+                            "empty, tap Create API key first, choose a project, then copy the key. If you see two keys, " +
+                            "either one works.",
+                        "3. ഒരു key ലിസ്റ്റിൽ ഉണ്ടെങ്കിൽ അതിന്റെ കോപ്പി ഐക്കൺ (രണ്ട് ചതുരങ്ങൾ, ചുവന്ന വൃത്തത്തിൽ) അമർത്തുക. " +
+                            "ലിസ്റ്റ് ശൂന്യമാണെങ്കിൽ ആദ്യം Create API key അമർത്തുക, ഒരു പ്രോജക്റ്റ് തിരഞ്ഞെടുക്കുക, " +
+                            "എന്നിട്ട് key കോപ്പി ചെയ്യുക. രണ്ട് key കാണുന്നുണ്ടെങ്കിൽ ഏതായാലും മതി.",
+                        R.drawable.guide_keys
+                    ),
+                    Step(
+                        "4. Open this app and tap the spanner icon at the top right (circled in red) to open Settings.",
+                        "4. ഈ ആപ്പ് തുറന്ന് മുകളിൽ വലതുവശത്തെ സ്പാനർ ഐക്കൺ (ചുവന്ന വൃത്തത്തിൽ) അമർത്തി Settings തുറക്കുക.",
+                        R.drawable.guide_toolbar
+                    ),
+                    Step(
+                        "5. Paste the key into the box and tap Save API Key. The app checks it (internet needed). " +
+                            "When you see \"API key verified and saved\", you're done.",
+                        "5. key ബോക്സിൽ പേസ്റ്റ് ചെയ്ത് Save API Key അമർത്തുക. ആപ്പ് അത് പരിശോധിക്കും (ഇന്റർനെറ്റ് വേണം). " +
+                            "\"API key verified and saved\" എന്ന് കണ്ടാൽ പൂർത്തിയായി."
+                    ),
+                    Step(
+                        "Keep your key private: don't send it to others or post it online. If it ever leaks, delete it on " +
+                            "the API Keys page and create a new one.",
+                        "key രഹസ്യമായി സൂക്ഷിക്കുക: മറ്റുള്ളവർക്ക് അയയ്ക്കുകയോ ഓൺലൈനിൽ പോസ്റ്റ് ചെയ്യുകയോ ചെയ്യരുത്. " +
+                            "ചോർന്നുപോയാൽ API Keys പേജിൽ അത് ഡിലീറ്റ് ചെയ്ത് പുതിയത് ഉണ്ടാക്കുക."
+                    )
+                )
             ),
             Section(
                 "2. Scan a receipt",
