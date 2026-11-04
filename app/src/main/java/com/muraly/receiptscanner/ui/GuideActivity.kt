@@ -300,14 +300,34 @@ class GuideActivity : AppCompatActivity() {
                     "ടൈപ്പ് ചെയ്യുമ്പോൾ തന്നെ ഫലങ്ങൾ മാറും."
             ),
             Section(
-                "6. Backup and restore",
+                "6. Item prices (what did I pay?)",
+                "Use this when you need to know what you paid for an item, for example when a customer asks for a lower rate.\n" +
+                    "1. Tap the upload-arrow icon, then Item prices.\n" +
+                    "2. Type the item name. A short word works best, for example \"wire\".\n" +
+                    "3. For each matching item you see the latest price you paid, the lowest price, and every earlier " +
+                    "purchase with its date and shop.\n" +
+                    "4. Type a margin % to see the latest price plus that margin. For example, 10 shows the price + 10%.\n" +
+                    "Tap any purchase to open its bill and see the photo, subtotal, GST and total, so you can check whether GST is " +
+                    "included. Prices are shown as printed on the bill. Only receipts you have already scanned are included.",
+                "6. സാധനങ്ങളുടെ വില (എന്ത് കൊടുത്തു?)",
+                "ഒരു സാധനത്തിന് നിങ്ങൾ എന്ത് വില കൊടുത്തു എന്ന് അറിയാൻ ഇത് ഉപയോഗിക്കാം, ഉദാഹരണത്തിന് ഒരു ഉപഭോക്താവ് വില കുറച്ച് ചോദിക്കുമ്പോൾ.\n" +
+                    "1. അപ്‌ലോഡ് ആരോ ഐക്കൺ തൊട്ട് Item prices തിരഞ്ഞെടുക്കുക.\n" +
+                    "2. സാധനത്തിന്റെ പേര് ടൈപ്പ് ചെയ്യുക. ചെറിയ വാക്കാണ് നല്ലത്, ഉദാ: \"wire\".\n" +
+                    "3. ഓരോ സാധനത്തിനും ഏറ്റവും ഒടുവിൽ കൊടുത്ത വിലയും ഏറ്റവും കുറഞ്ഞ വിലയും, തീയതിയും കടയും സഹിതം " +
+                    "മുൻപത്തെ എല്ലാ വാങ്ങലുകളും കാണാം.\n" +
+                    "4. മാർജിൻ % ടൈപ്പ് ചെയ്താൽ ഏറ്റവും ഒടുവിലത്തെ വിലയോട് ആ മാർജിൻ ചേർത്ത വില കാണാം. ഉദാ: 10 എന്ന് കൊടുത്താൽ വില + 10%.\n" +
+                    "ഏതെങ്കിലും വാങ്ങലിൽ തൊട്ടാൽ അതിന്റെ ബിൽ തുറക്കും; ഫോട്ടോ, സബ്ടോട്ടൽ, GST, ആകെ തുക എന്നിവ കണ്ട് GST ഉൾപ്പെട്ടതാണോ എന്ന് പരിശോധിക്കാം. " +
+                    "ബില്ലിൽ അച്ചടിച്ച വിലയാണ് കാണിക്കുന്നത്. നിങ്ങൾ ഇതിനകം സ്കാൻ ചെയ്ത രസീതുകൾ മാത്രമേ ഉൾപ്പെടൂ."
+            ),
+            Section(
+                "7. Backup and restore",
                 "Backup: tap the upload-arrow icon (the middle icon at the top), then Backup all receipts. " +
                     "Save the zip file to Google Drive, Telegram, WhatsApp or Files. It contains all your receipts and their photos.\n\n" +
                     "Restore: tap the same icon, choose Restore from backup, and pick the zip file. Restored receipts are " +
                     "added to the ones you already have; nothing is deleted. Older .json backups still work but have no photos.\n\n" +
                     "Tip: make a backup regularly and keep the zip somewhere safe. If you uninstall the app or lose the " +
                     "phone without a backup, the receipts are gone.",
-                "6. ബാക്കപ്പും റീസ്റ്റോറും",
+                "7. ബാക്കപ്പും റീസ്റ്റോറും",
                 "ബാക്കപ്പ്: മുകളിലെ അപ്‌ലോഡ് ആരോ ഐക്കൺ (നടുവിലെ ഐക്കൺ) തൊട്ട് Backup all receipts തിരഞ്ഞെടുക്കുക. " +
                     "ലഭിക്കുന്ന zip ഫയൽ Google Drive, Telegram, WhatsApp അല്ലെങ്കിൽ Files-ൽ സേവ് ചെയ്യുക. " +
                     "അതിൽ നിങ്ങളുടെ എല്ലാ രസീതുകളും ഫോട്ടോകളും ഉണ്ടാകും.\n\n" +
@@ -318,24 +338,24 @@ class GuideActivity : AppCompatActivity() {
                     "ബാക്കപ്പ് ഇല്ലാതെ ആപ്പ് അൺഇൻസ്റ്റാൾ ചെയ്താലോ ഫോൺ നഷ്ടപ്പെട്ടാലോ രസീതുകൾ നഷ്ടപ്പെടും."
             ),
             Section(
-                "7. Export and insights",
+                "8. Export and insights",
                 "• Export All (CSV): the floppy-disk icon at the top makes a spreadsheet of every receipt that you can " +
                     "open in Excel or Google Sheets.\n" +
                     "• Spending insights: tap the upload-arrow icon, then View spending insights, to see your spending " +
                     "by category and by month.",
-                "7. എക്സ്പോർട്ടും ചെലവ് വിവരങ്ങളും",
+                "8. എക്സ്പോർട്ടും ചെലവ് വിവരങ്ങളും",
                 "• Export All (CSV): മുകളിലെ ഫ്ലോപ്പി ഡിസ്ക് ഐക്കൺ എല്ലാ രസീതുകളുടെയും ഒരു സ്പ്രെഡ്ഷീറ്റ് ഉണ്ടാക്കും; " +
                     "അത് Excel-ലോ Google Sheets-ലോ തുറക്കാം.\n" +
                     "• ചെലവ് വിവരങ്ങൾ: അപ്‌ലോഡ് ആരോ ഐക്കൺ തൊട്ട് View spending insights തിരഞ്ഞെടുത്താൽ " +
                     "Category അനുസരിച്ചും മാസം അനുസരിച്ചും ചെലവ് കാണാം."
             ),
             Section(
-                "8. Good to know",
+                "9. Good to know",
                 "• Receipts and photos are stored only on your phone. They are not uploaded anywhere unless you share a backup yourself.\n" +
                     "• When you scan, the receipt text and a small copy of the photo are sent to Google Gemini to read the details. " +
                     "That needs internet.\n" +
                     "• Everything else works offline: viewing, searching, editing and exporting.",
-                "8. അറിഞ്ഞിരിക്കേണ്ടവ",
+                "9. അറിഞ്ഞിരിക്കേണ്ടവ",
                 "• രസീതുകളും ഫോട്ടോകളും നിങ്ങളുടെ ഫോണിൽ മാത്രമാണ് സൂക്ഷിക്കുന്നത്. നിങ്ങൾ ബാക്കപ്പ് സ്വയം ഷെയർ ചെയ്താലല്ലാതെ " +
                     "അവ എവിടെയും അപ്‌ലോഡ് ചെയ്യപ്പെടില്ല.\n" +
                     "• സ്കാൻ ചെയ്യുമ്പോൾ വിവരങ്ങൾ വായിക്കാനായി രസീതിലെ എഴുത്തും ഫോട്ടോയുടെ ചെറിയൊരു പകർപ്പും Google Gemini-ക്ക് " +

@@ -31,6 +31,7 @@
         <activity android:name=".ui.SettingsActivity" android:exported="false" />
         <activity android:name=".ui.InsightsActivity" android:exported="false" />
         <activity android:name=".ui.GuideActivity" android:exported="false" />
+        <activity android:name=".ui.ItemPricesActivity" android:exported="false" android:windowSoftInputMode="adjustResize|stateVisible" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

@@ -8,6 +8,19 @@ import kotlinx.coroutines.flow.Flow
 
 data class ImagePathRow(val id: Long, val imageUri: String)
 
+/** One purchase of an item, joined with the receipt it came from (used by the Item prices screen). */
+data class ItemPriceRow(
+    val receiptId: Long,
+    val itemName: String,
+    val quantity: Int,
+    val unitPrice: Double,
+    val totalPrice: Double,
+    val shopName: String,
+    val date: String,
+    val invoiceNumber: String,
+    val createdAt: Long
+)
+
 @Dao
 interface ReceiptDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -42,6 +55,21 @@ interface ReceiptDao {
 
     @Query("UPDATE receipts SET imageUri = :imageUri WHERE id = :id")
     suspend fun updateImageUri(id: Long, imageUri: String)
+
+    /** Every saved purchase whose item name contains [query], newest first. Read-only; no schema change. */
+    @Query(
+        """
+        SELECT r.id AS receiptId, i.name AS itemName, i.quantity AS quantity, i.unitPrice AS unitPrice,
+               i.totalPrice AS totalPrice, r.shopName AS shopName, r.date AS date,
+               r.invoiceNumber AS invoiceNumber, r.createdAt AS createdAt
+        FROM receipt_items i
+        JOIN receipts r ON r.id = i.receiptId
+        WHERE i.name LIKE '%' || :query || '%'
+        ORDER BY r.date DESC, r.createdAt DESC
+        LIMIT 500
+        """
+    )
+    fun searchItemPrices(query: String): Flow<List<ItemPriceRow>>
 
     @Delete
     suspend fun deleteReceipt(receipt: ReceiptEntity)

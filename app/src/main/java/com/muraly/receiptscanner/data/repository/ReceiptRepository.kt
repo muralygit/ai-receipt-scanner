@@ -1,5 +1,6 @@
 package com.muraly.receiptscanner.data.repository
 
+import com.muraly.receiptscanner.data.local.dao.ItemPriceRow
 import com.muraly.receiptscanner.data.local.dao.ReceiptDao
 import com.muraly.receiptscanner.data.local.entity.ReceiptEntity
 import com.muraly.receiptscanner.data.local.entity.ReceiptItemEntity
@@ -12,6 +13,8 @@ class ReceiptRepository(private val receiptDao: ReceiptDao) {
     val allReceipts: Flow<List<ReceiptWithItems>> = receiptDao.getAllReceipts()
 
     fun searchReceipts(query: String): Flow<List<ReceiptWithItems>> = receiptDao.searchReceipts(query)
+
+    fun searchItemPrices(query: String): Flow<List<ItemPriceRow>> = receiptDao.searchItemPrices(query)
 
     suspend fun getReceiptById(id: Long): ReceiptWithItems? = withContext(Dispatchers.IO) {
         receiptDao.getReceiptById(id)
